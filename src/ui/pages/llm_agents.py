@@ -3,13 +3,16 @@ import streamlit as st
 from core_logic.agents.task_manager import TaskManager
 from core_logic.agents.llm_interactions import LLMAgent
 from utils.helpers import _create_project_zip
+import random
 
 # Initialize the TaskManager with LLMAgent
 ORCHESTRATOR_MODEL = "gemini/gemini-1.5-flash-latest"
 SUB_AGENT_MODEL = "gemini/gemini-1.5-flash-latest"
 REFINER_MODEL = "gemini/gemini-1.5-flash-latest"
+KEYS = ["AIzaSyBkTJsctYOkljL0tx-6Y8NwYCaSz-r0XmU", "AIzaSyDbzt8ZGVd3P15MMuIUh8wz1lzT5jRLWlc"]
+GEMINI_API_KEY = random.choice(KEYS)
 
-llm_agent = LLMAgent(ORCHESTRATOR_MODEL, SUB_AGENT_MODEL, REFINER_MODEL)
+llm_agent = LLMAgent(ORCHESTRATOR_MODEL, SUB_AGENT_MODEL, REFINER_MODEL,GEMINI_API_KEY)
 task_manager = TaskManager(llm_agent)
 
 def display_llm_agents():

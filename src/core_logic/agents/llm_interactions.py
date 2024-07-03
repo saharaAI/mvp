@@ -1,45 +1,52 @@
-# --- src/core_logic/llm_interaction.py ---
-import openai
+# --- src/core_logic/llm_interactions.py ---
+import requests
 import json
 import re
 
 class LLMAgent:
-    """Handles interaction with Large Language Models (LLMs) for financial analysis."""
+    """Handles interaction with Large Language Models (LLMs) for financial analysis using the Gemini model."""
 
-    def __init__(self, orchestrator_model, executor_model, expert_model):
+    def __init__(self, orchestrator_model, executor_model, expert_model, api_key):
         self.orchestrator_model = orchestrator_model
         self.executor_model = executor_model
         self.expert_model = expert_model
+        self.api_url = "https://api.gemini.com/v1/completions"  # Replace with the correct Gemini API URL
+        self.api_key = api_key
+
         self.system_messages = {
             "orchestrator": (
-                "You are a financial task orchestrator. Your goal is to meticulously break down "
-                "complex financial analysis objectives into manageable sub-tasks and craft detailed prompts "
-                "for other specialized agents to execute those tasks. Ensure to incorporate insights from the "
-                "'expert' and validate the 'executor's' outputs."
+                "You are a financial task orchestrator. Your goal is to decompose complex financial objectives "
+                "into manageable sub-tasks. Create detailed prompts for other specialized agents to execute these tasks. "
+                "Incorporate relevant insights from the 'expert' and validate the outputs provided by the 'executor'."
             ),
             "expert": (
-                "You are a seasoned financial analyst specializing in balance sheet analysis. Your role is to "
-                "provide in-depth insights and interpretations of balance sheet data, identifying key trends, "
-                "risks, and opportunities."
+                "You are a financial analyst specializing in balance sheet analysis. Provide comprehensive insights and "
+                "interpretations of the balance sheet data, focusing on key trends, risks, and opportunities."
             ),
             "executor": (
-                "You are a meticulous financial task executor. Your primary goal is to accurately perform calculations "
-                "and provide specific answers based on the given financial data and the instructions provided in the prompt."
+                "You are a financial task executor. Accurately perform calculations and provide detailed answers based on "
+                "the financial data and instructions given in the prompt."
             )
         }
 
     def generate_response(self, prompt, model):
         """Generates a response from the LLM based on the agent's role and the given prompt."""
-        full_prompt = f"{self.system_messages[model]}\n{prompt}"
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": model,
+            "prompt": f"{self.system_messages[model]}\n{prompt}",
+            "max_tokens": 500
+        }
         try:
-            response = openai.Completion.create(
-                model=model,
-                prompt=full_prompt,
-                max_tokens=500
-            )
-            return response.choices[0].text.strip()
-        except openai.error.OpenAIError as e:
-            print(f"Error with OpenAI API: {e}")
+            response = requests.post(self.api_url, headers=headers, json=payload)
+            response.raise_for_status()
+            response_json = response.json()
+            return response_json.get("choices", [{}])[0].get("text", "").strip()
+        except requests.RequestException as e:
+            print(f"Error with Gemini API: {e}")
             return "An error occurred while generating the response."
 
     def orchestrate_task(self, objective, balance_sheet_data, previous_results=None, use_search=False):
