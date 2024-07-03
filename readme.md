@@ -54,6 +54,9 @@ tree -a -I ".git" | sed -e 's/├── /│   ├── /' -e 's/└── /│
 │   │   ├── agents
 │   │   │   ├── __init__.py
 │   │   │   └── agents.py
+|   │   ├── credit_risk_modeling
+|   │   │   ├── __init__.py
+|   │   │   └── model.py
 │   │   └── tasks
 │   │       ├── __init__.py
 │   │       └── tasks.py

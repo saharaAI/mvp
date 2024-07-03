@@ -5,7 +5,7 @@ import re
 import json
 import io
 import zipfile
-from app import task_manager  # Now import the task_manager instance
+from app import task_manager  # Import the task_manager instance
 
 def display_llm_agents():
     """Renders the page for interacting with LLM agents."""
