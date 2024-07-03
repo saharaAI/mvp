@@ -1,4 +1,4 @@
-# Sahara Analytics - AI-Powered Task Orchestrator
+# Sahara Analytics - AI Powered Analytics For Decision Making
 
 **Proprietary and Confidential**
 

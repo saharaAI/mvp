@@ -5,10 +5,15 @@ import re
 import json
 import io
 import zipfile
-from app import task_manager  # Import the task_manager instance
+from core_logic.tasks.tasks import TaskManager
+
+task_manager = TaskManager()
+
 
 def display_llm_agents():
     """Renders the page for interacting with LLM agents."""
+    #from app import task_manager  # Import inside the function to avoid circular import
+
     st.title("🤖 AI Task Orchestrator - Sahara Analytics")
     objective = st.text_area("Enter your objective:")
     file_content = st.text_area("Enter file content (optional):")

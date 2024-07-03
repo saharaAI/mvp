@@ -5,8 +5,8 @@ import sys
 from pages.home import display_home
 from pages.pdf_analysis import display_pdf_analysis
 from pages.llm_agents import display_llm_agents
-from core_logic.agents.agents import LLMAgent
-from core_logic.tasks.tasks import TaskManager
+from src.core_logic.agents.agents import LLMAgent
+from src.core_logic.tasks.tasks import TaskManager
 
 # Get the absolute path to the 'src' directory 
 src_dir = os.path.abspath(os.path.dirname(__file__)) 
