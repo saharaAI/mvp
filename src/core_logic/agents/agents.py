@@ -5,97 +5,70 @@ import json
 from datetime import datetime
 
 class LLMAgent:
-    """Handles interaction with Large Language Models (LLMs)."""
+    """Handles interaction with Large Language Models (LLMs) for financial analysis."""
 
-    def __init__(self, orchestrator_model, sub_agent_model, refiner_model):
-        self.orchestrator_model = orchestrator_model
-        self.sub_agent_model = sub_agent_model
-        self.refiner_model = refiner_model
+    def __init__(self, role):
+        self.role = role
+        self.system_messages = {
+            "orchestrator": "You are a financial task orchestrator. Your goal is to meticulously break down complex financial analysis objectives into manageable sub-tasks and craft detailed prompts for other specialized agents to execute those tasks. Ensure to incorporate insights from the 'expert' and validate the 'executor's' outputs.",
+            "expert": "You are a seasoned financial analyst specializing in balance sheet analysis. Your role is to provide in-depth insights and interpretations of balance sheet data, identifying key trends, risks, and opportunities.",
+            "executor": "You are a meticulous financial task executor. Your primary goal is to accurately perform calculations and provide specific answers based on the given financial data and the instructions provided in the prompt."
+        }
 
-    def orchestrate_task(self, objective, file_content=None, previous_results=None, use_search=False):
-        """Orchestrates the task breakdown and sub-task generation."""
+    def generate_response(self, prompt, model="your-llm-model"):  # Replace with your model
+        """Generates a response from the LLM based on the agent's role and the given prompt."""
+        full_prompt = f"{self.system_messages[self.role]}\n{prompt}"
+        response = completion(model=model, 
+                             messages=[{"role": "user", "content": full_prompt}])
+        return response.choices[0].message.content.strip()
+
+    def orchestrate_task(self, objective, balance_sheet_data, previous_results=None, use_search=False):
+        """Orchestrates the financial analysis task."""
         previous_results_text = "\n".join(previous_results) if previous_results else "None"
 
-        messages = [
-            {"role": "system", "content": "You are a detailed and meticulous assistant... (rest of your system message)"},
-            {"role": "user", "content": f"Based on the following objective{' and file content' if file_content else ''}, ... (rest of your user message)"}
-        ]
+        prompt = (
+            f"Objective: {objective}\n"
+            f"Balance Sheet Data:\n{balance_sheet_data}\n\n"
+            f"Previous Sub-task Results:\n{previous_results_text}\n\n"
+            "Based on the objective and the balance sheet data, determine the next sub-task "
+            "and create a concise and detailed prompt for the 'executor' agent. "
+            "Incorporate any relevant insights from previous results."
+        )
 
         if use_search:
-            messages.append({"role": "user", "content": "Please also generate a JSON object containing a single 'search_query' ... (rest of your search message)"})
+            prompt += " If additional information is required, also generate a search query to find it."
 
-        response = completion(model=self.orchestrator_model, messages=messages)
-        response_text = response['choices'][0]['message']['content']
+        response_text = self.generate_response(prompt, model=self.orchestrator_model)
 
         search_query = None
         if use_search:
             search_query = self._extract_search_query(response_text)
 
-        return response_text, file_content, search_query
+        return response_text, search_query
 
     def _extract_search_query(self, response_text):
-        """Helper method to extract search query from response."""
+        """Extracts the search query from the response (if any)."""
         json_match = re.search(r'{.*}', response_text, re.DOTALL)
         if json_match:
             json_string = json_match.group()
             try:
                 return json.loads(json_string)["search_query"]
             except json.JSONDecodeError as e:
-                print(f"Error parsing JSON: {e}") 
+                print(f"Error parsing JSON: {e}")
         return None
 
-    def execute_sub_task(self, prompt, search_query=None, previous_gpt_tasks=None, use_search=False, continuation=False):
-        """Executes a sub-task using the sub-agent model."""
-        if previous_gpt_tasks is None:
-            previous_gpt_tasks = []
+    def execute_sub_task(self, prompt, balance_sheet_data, search_results=None):
+        """Executes a sub-task related to financial analysis."""
+        if search_results:
+            prompt = f"{prompt}\n\nSearch Results:\n{search_results}"
+        
+        prompt = f"{prompt}\n\nUse the provided Balance Sheet Data:\n{balance_sheet_data}\n\n"  # Add data to prompt
 
-        continuation_prompt = "Continuing from the previous answer, please complete the response."
-        system_message = (
-            "You are an expert assistant... (Your system message)"
-        )
-        if continuation:
-            prompt = continuation_prompt
+        return self.generate_response(prompt, model=self.executor_model) 
 
-        qna_response = None # Placeholder for future search functionality
-        if search_query and use_search:
-            print(f"Search query: {search_query}")
-            # TODO: Implement actual search functionality
+    def provide_expert_insights(self, balance_sheet_data):
+        """Generates expert insights based on the balance sheet data."""
+        prompt = f"Analyze the following balance sheet data and provide your expert insights:\n{balance_sheet_data}"
+        return self.generate_response(prompt, model=self.expert_model)
 
-        messages = [
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": prompt}
-        ]
-
-        if qna_response:
-            messages.append({"role": "user", "content": f"\nSearch Results:\n{qna_response}"})
-
-        response = completion(model=self.sub_agent_model, messages=messages)
-        response_text = response['choices'][0]['message']['content']
-
-        if len(response_text) >= 4000:
-            print("Output may be truncated. Attempting to continue the response.")
-            response_text += self.execute_sub_task(
-                prompt, search_query, previous_gpt_tasks, use_search, continuation=True
-            )
-
-        return response_text
-
-    def refine_output(self, objective, sub_task_results, filename, projectname, continuation=False):
-        """Refines the final output using the refiner model."""
-        messages = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": "Objective: " + objective + "\n\nSub-task results:\n" + "\n".join(sub_task_results) + "\n\nPlease review and refine the sub-task results into a cohesive final output... (Rest of your message)"}
-                ]
-            }
-        ]
-        response = completion(model=self.refiner_model, messages=messages)
-        response_text = response['choices'][0]['message']['content']
-
-        if len(response_text) >= 4000 and not continuation:
-            print("Output may be truncated. Attempting to continue the response.")
-            response_text += "\n" + self.refine_output(
-                objective, sub_task_results + [response_text], filename, projectname, continuation=True
-            )
-        return response_text
+    # ... (You can remove the 'refine_output' method if it's not needed)

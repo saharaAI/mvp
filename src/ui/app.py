@@ -1,16 +1,19 @@
 # --- src/ui/app.py --- 
 import streamlit as st
-import os
+import os,sys
 import random
-from src.ui.pages.home import display_home
-from src.ui.pages.pdf_analysis import display_pdf_analysis
-from src.ui.pages.website_crawl import display_website_crawl
-from src.ui.pages.llm_agents import display_llm_agents
-from src.core_logic.agents.agents import LLMAgent
-from src.core_logic.tasks.tasks import TaskManager
+from pages.home import display_home
+from pages.pdf_analysis import display_pdf_analysis
+from pages.website_crawl import display_website_crawl
+from pages.llm_agents import display_llm_agents
+from core_logic.agents.agents import LLMAgent
+from core_logic.tasks.tasks import TaskManager
 
-# ... other imports 
-# ... (Import other necessary modules) ...
+# Get the absolute path to the 'src' directory 
+src_dir = os.path.abspath(os.path.dirname(__file__)) 
+
+# Add the 'src' directory to the Python path
+sys.path.insert(0, src_dir)
 
 # Define the models (consider moving these to a config file)
 ORCHESTRATOR_MODEL = "gemini/gemini-1.5-flash-latest"

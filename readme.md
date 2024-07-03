@@ -2,10 +2,10 @@
 
 **Proprietary and Confidential**
 
-**Copyright © [Year] Sahara Analytics. All rights reserved.**
+**Copyright © 2024 Sahara Analytics. All rights reserved.**
 
 <center> 
-<img src="path/to/your/animated-gif.gif" alt="Animated gif showcasing your application" width="600"> 
+<img src="https://th-thumbnailer.cdn-si-edu.com/AMg2HHVpDuLByTS4_WJWJoyNgsU=/1000x750/filters:no_upscale()/https://tf-cmsv2-smithsonianmag-media.s3.amazonaws.com/filer/ee/54/ee546179-a222-470a-8f7e-147ca1adbcc6/42-56923287.jpg" alt="C:\Users\21652\Desktop\mvp\images\image.png" width="600"> 
 </center>
 
 
@@ -46,6 +46,7 @@ Navigate to your project directory and run the following command to view the lat
 
 ```sh
 tree -a -I ".git" | sed -e 's/├── /│   ├── /' -e 's/└── /│   └── /' -e 's/^[^│].*/├── &/'
+
 
 ├── src
 │   ├── core_logic

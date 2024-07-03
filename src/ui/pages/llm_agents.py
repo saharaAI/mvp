@@ -5,7 +5,7 @@ import re
 import json
 import io
 import zipfile
-from src.ui.app import task_manager  # Now import the task_manager instance
+from app import task_manager  # Now import the task_manager instance
 
 def display_llm_agents():
     """Renders the page for interacting with LLM agents."""
@@ -19,13 +19,25 @@ def display_llm_agents():
             sub_task_results = task_manager.start_task(objective, file_content, use_search)
             refined_output = task_manager.generate_report(objective, sub_task_results)
 
-            # ... File and Folder Creation (Consider moving to a dedicated function/class) ...
             project_name = _extract_project_name(refined_output) or "default_project"
             folder_structure = _extract_folder_structure(refined_output)
             code_blocks = _extract_code_blocks(refined_output)
             zip_buffer = _create_project_zip(project_name, folder_structure, code_blocks)
 
-            # ... Download and Display ...
+            # --- Download and Display ---
+            st.success("Task completed successfully!")
+
+            # Offer the zip file for download
+            st.download_button(
+                label="Download Project Files",
+                data=zip_buffer.getvalue(),
+                file_name=f"{project_name}.zip",
+                mime="application/zip"
+            )
+
+            # Display the full refined output
+            st.subheader("Refined Output")
+            st.text_area("", value=refined_output, height=300)
 
 def _extract_project_name(refined_output):
     """Extracts the project name from the refined output."""
