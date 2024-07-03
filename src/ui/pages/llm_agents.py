@@ -1,38 +1,43 @@
-# --- src/ui/pages/llm_agents.py --- 
+# --- src/ui/pages/llm_agents.py ---
 import streamlit as st
-import os
-import re
-import json
-import io
-import zipfile
-from core_logic.tasks.tasks import TaskManager
+from core_logic.agents.task_manager import TaskManager
+from core_logic.agents.llm_interactions import LLMAgent
+from utils.helpers import _create_project_zip
 
-task_manager = TaskManager()
+# Initialize the TaskManager with LLMAgent
+ORCHESTRATOR_MODEL = "gemini/gemini-1.5-flash-latest"
+SUB_AGENT_MODEL = "gemini/gemini-1.5-flash-latest"
+REFINER_MODEL = "gemini/gemini-1.5-flash-latest"
 
+llm_agent = LLMAgent(ORCHESTRATOR_MODEL, SUB_AGENT_MODEL, REFINER_MODEL)
+task_manager = TaskManager(llm_agent)
 
 def display_llm_agents():
     """Renders the page for interacting with LLM agents."""
-    #from app import task_manager  # Import inside the function to avoid circular import
-
     st.title("🤖 AI Task Orchestrator - Sahara Analytics")
-    objective = st.text_area("Enter your objective:")
-    file_content = st.text_area("Enter file content (optional):")
-    use_search = st.checkbox("Use search")
+    st.markdown(
+        """
+        Welcome to the AI Task Orchestrator! Use this tool to break down complex financial objectives into manageable sub-tasks and generate detailed reports.
+        """
+    )
+    
+    objective = st.text_area("Enter your objective:", placeholder="Describe the financial analysis task you need to perform.")
+    file_content = st.text_area("Enter file content (optional):", placeholder="Paste or upload balance sheet data here.")
+    use_search = st.checkbox("Use search to find additional information")
 
     if st.button("Start Task"):
         with st.spinner("Processing your task..."):
             sub_task_results = task_manager.start_task(objective, file_content, use_search)
             refined_output = task_manager.generate_report(objective, sub_task_results)
 
-            project_name = _extract_project_name(refined_output) or "default_project"
-            folder_structure = _extract_folder_structure(refined_output)
-            code_blocks = _extract_code_blocks(refined_output)
+            # Dummy values for folder structure and code blocks
+            project_name = "default_project"
+            folder_structure = ["code"]
+            code_blocks = [("main.py", refined_output)]
             zip_buffer = _create_project_zip(project_name, folder_structure, code_blocks)
 
-            # --- Download and Display ---
             st.success("Task completed successfully!")
 
-            # Offer the zip file for download
             st.download_button(
                 label="Download Project Files",
                 data=zip_buffer.getvalue(),
@@ -40,52 +45,5 @@ def display_llm_agents():
                 mime="application/zip"
             )
 
-            # Display the full refined output
             st.subheader("Refined Output")
-            st.text_area("", value=refined_output, height=300)
-
-def _extract_project_name(refined_output):
-    """Extracts the project name from the refined output."""
-    match = re.search(r'Project Name: (.*)', refined_output)
-    return match.group(1).strip() if match else None
-
-def _extract_folder_structure(refined_output):
-    """Extracts the folder structure from the refined output."""
-    match = re.search(
-        r'<folder_structure>(.*?)</folder_structure>', refined_output, re.DOTALL
-    )
-    if match:
-        try:
-            return json.loads(match.group(1).strip())
-        except json.JSONDecodeError as e:
-            st.error(f"Error parsing JSON: {e}")
-    return {}
-
-def _extract_code_blocks(refined_output):
-    """Extracts code blocks from the refined output."""
-    return re.findall(r'Filename: (\S+)\s*```[\w]*\n(.*?)\n```', refined_output, re.DOTALL)
-
-def _create_project_zip(project_name, folder_structure, code_blocks):
-    """Creates a zip file containing the generated project."""
-    zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
-        _create_folders_and_files_recursive(
-            zip_file, project_name, folder_structure, code_blocks
-        )
-    return zip_buffer
-
-def _create_folders_and_files_recursive(zip_file, current_path, structure, code_blocks):
-    """Recursively creates folders and files in the zip archive."""
-    for key, value in structure.items():
-        path = os.path.join(current_path, key)
-        if isinstance(value, dict):
-            zip_file.writestr(path + '/', '')  # Create a directory in the zip
-            _create_folders_and_files_recursive(
-                zip_file, path, value, code_blocks
-            )
-        else:
-            code_content = next(
-                (code for file, code in code_blocks if file == key), None
-            )
-            if code_content:
-                zip_file.writestr(path, code_content)
+            st.text_area("", value=refined_output, height=300, max_chars=5000)

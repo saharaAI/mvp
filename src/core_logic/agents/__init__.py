@@ -1,1 +1,1 @@
-from .agents    import  LLMAgent
+from .llm_interactions import LLMAgent
