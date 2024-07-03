@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
 
-class DNN(nn.Module):
+class CreditRiskModel(nn.Module):
     """Prototypes a deep neural network (DNN) architecture for credit risk modeling."""
 
     def __init__(self, model_name: str, file_path: str, sheet_name: str = None) -> None:

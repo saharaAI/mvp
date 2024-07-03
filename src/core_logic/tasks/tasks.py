@@ -4,7 +4,7 @@ import json
 import zipfile
 import io
 from datetime import datetime
-from src.core_logic.agents.agents import LLMAgent # Adjust import path if needed
+from core_logic.agents.agents import LLMAgent # Adjust import path if needed
 
 class TaskManager:
     """Manages the lifecycle of a task, from initiation to completion."""
